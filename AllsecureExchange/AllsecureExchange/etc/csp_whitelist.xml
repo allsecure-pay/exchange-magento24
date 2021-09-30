@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp/etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="script-src">
+            <values>
+                <value id="prod-allsecureexchange-script" type="host">https://asxgw.com</value>
+                <value id="sandbox-allsecureexchange-script" type="host">https://asxgw.paymentsandbox.cloud</value>
+                <value id="secure-allsecureexchange-script" type="host">https://secure.asxgw.com</value>
+            </values>
+        </policy>
+        <policy id="frame-src">
+            <values>
+                <value id="secure-allsecureexchange-frame" type="host">https://secure.asxgw.com</value>
+            </values>
+        </policy>
+        <policy id="connect-src">
+            <values>
+                <value id="prod-allsecureexchange-connect" type="host">https://asxgw.com</value>
+                <value id="sandbox-allsecureexchange-connect" type="host">https://asxgw.paymentsandbox.cloud</value>
+            </values>
+        </policy>
+    </policies>
+</csp_whitelist>

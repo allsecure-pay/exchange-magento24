@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="js">
+            <block class="AllsecureExchange\AllsecureExchange\Block\Checkout\PaymentJsLoader" template="AllsecureExchange_AllsecureExchange::payment-js-loader.phtml"
+                   name="allsecureexchange.checkout.script"/>
+        </referenceContainer>
+
+        <referenceBlock name="order.create.billing.method.form">
+            <action method="setMethodFormTemplate">
+                <argument name="method" xsi:type="string">allsecureexchange_creditcard</argument>
+                <argument name="template" xsi:type="string">AllsecureExchange_AllsecureExchange::form/cc.phtml</argument>
+            </action>
+
+            <action method="setMethodFormTemplate">
+                <argument name="method" xsi:type="string">allsecureexchange_cc_vault</argument>
+                <argument name="template" xsi:type="string">Magento_Vault::form/vault.phtml</argument>
+            </action>
+        </referenceBlock>
+    </body>
+</page>

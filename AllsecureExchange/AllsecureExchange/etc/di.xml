@@ -1,0 +1,375 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Config\Model\Config\TypePool">
+        <arguments>
+            <argument name="sensitive" xsi:type="array">
+                <item name="allsecureexchange/general/password" xsi:type="string">1</item>
+                <item name="payment/allsecureexchange_creditcard/api_key" xsi:type="string">1</item>
+                <item name="payment/allsecureexchange_creditcard/shared_secret" xsi:type="string">1</item>
+                <item name="payment/allsecureexchange_creditcard/integration_key" xsi:type="string">1</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Payment Method Facade configuration -->
+    <virtualType name="AllsecureExchangePaymentGatewayFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="const">AllsecureExchange\AllsecureExchange\Model\Ui\ConfigProvider::CREDITCARD_CODE</argument>
+            <argument name="formBlockType" xsi:type="string">AllsecureExchange\AllsecureExchange\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">AllsecureExchange\AllsecureExchange\Block\Info</argument>
+            <argument name="valueHandlerPool" xsi:type="object">AllsecureExchangePaymentGatewayValueHandlerPool</argument>
+            <argument name="commandPool" xsi:type="object">AllsecureExchangePaymentGatewayCommandPool</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Logger, initialized with AllsecureExchangePaymentGatewayConfig -->
+    <virtualType name="AllsecureExchangePaymentGatewayLogger" type="Magento\Payment\Model\Method\Logger">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionAuthorization">
+        <arguments>
+            <argument name="logger" xsi:type="object">AllsecureExchangePaymentGatewayLogger</argument>
+        </arguments>
+    </type>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionDebit">
+        <arguments>
+            <argument name="logger" xsi:type="object">AllsecureExchangePaymentGatewayLogger</argument>
+        </arguments>
+    </type>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionVoid">
+        <arguments>
+            <argument name="logger" xsi:type="object">AllsecureExchangePaymentGatewayLogger</argument>
+        </arguments>
+    </type>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionCapture">
+        <arguments>
+            <argument name="logger" xsi:type="object">AllsecureExchangePaymentGatewayLogger</argument>
+        </arguments>
+    </type>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionRefund">
+        <arguments>
+            <argument name="logger" xsi:type="object">AllsecureExchangePaymentGatewayLogger</argument>
+        </arguments>
+    </type>
+
+    <!-- CONFIG -->
+    <virtualType name="AllsecureExchangeCardConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">\AllsecureExchange\AllsecureExchange\Model\Ui\ConfigProvider::CREDITCARD_CODE</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AllsecureExchangeConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="string">allsecureexchange_allsecureexchange</argument>
+            <argument name="pathPattern" xsi:type="string">%s/%s</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Commands infrastructure -->
+    <virtualType name="AllsecureExchangePaymentGatewayCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="authorize" xsi:type="string">AllsecureExchangePaymentGatewayAuthorizeCommand</item>
+                <item name="sale" xsi:type="string">AllsecureExchangePaymentGatewaySaleCommand</item>
+                <item name="capture" xsi:type="string">AllsecureExchangePaymentGatewayCaptureStrategyCommand</item>
+                <item name="settlement" xsi:type="string">AllsecureExchangePaymentGatewayCaptureCommand</item>
+                <item name="vault_authorize" xsi:type="string">AllsecureExchangePaymentGatewayVaultAuthorizeCommand</item>
+                <item name="vault_sale" xsi:type="string">AllsecureExchangePaymentGatewayVaultSaleCommand</item>
+                <item name="vault_capture" xsi:type="string">AllsecureExchangePaymentGatewayVaultCaptureCommand</item>
+                <item name="refund" xsi:type="string">AllsecureExchangePaymentGatewayRefundCommand</item>
+                <item name="void" xsi:type="string">AllsecureExchangePaymentGatewayVoidCommand</item>
+                <item name="cancel" xsi:type="string">AllsecureExchangePaymentGatewayVoidCommand</item>
+                <item name="deny_payment" xsi:type="string">AllsecureExchangePaymentGatewayVoidCommand</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AllsecureExchangePaymentGatewayCaptureStrategyCommand" type="AllsecureExchange\AllsecureExchange\Gateway\Command\CaptureStrategyCommand">
+        <arguments>
+            <argument name="commandPool" xsi:type="object">AllsecureExchangePaymentGatewayCommandPool</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Authorize command -->
+    <virtualType name="AllsecureExchangePaymentGatewayAuthorizeCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchangePaymentGatewayAuthorizationRequest</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchangePaymentGatewayResponseHandlerComposite</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionAuthorization</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+    <!-- Authorize command End-->
+
+    <!-- Authorize vault command -->
+    <virtualType name="AllsecureExchangePaymentGatewayVaultAuthorizeCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchangePaymentGatewayAuthorizationVaultRequest</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionAuthorization</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\TxnIdHandler</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AllsecureExchangePaymentGatewayVaultSaleCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchangePaymentGatewayAuthorizationVaultRequest</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionDebit</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\DebitHandler</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AllsecureExchangePaymentGatewayVaultCaptureCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Request\CaptureRequest</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionCapture</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\CaptureHandler</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+    <!-- Authorize vault command end -->
+
+    <!-- Sale command -->
+    <virtualType name="AllsecureExchangePaymentGatewaySaleCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchangePaymentGatewayAuthorizationRequest</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchangePaymentGatewaySaleResponseHandlerComposite</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionDebit</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Authorization Request -->
+    <virtualType name="AllsecureExchangePaymentGatewayAuthorizationRequest" type="Magento\Payment\Gateway\Request\BuilderComposite">
+        <arguments>
+            <argument name="builders" xsi:type="array">
+                <item name="transaction" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\AuthorizationRequest</item>
+                <item name="cvv" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\SaveCardRequest</item>
+                <item name="payment" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\PaymentDataBuilder</item>
+                <item name="customer" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\CustomerDataBuilder</item>
+                <item name="address" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\AddressDataBuilder</item>
+                <item name="threeDSecure" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\ThreeDSecureDataBuilder</item>
+                <item name="extraData" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\ExtraDataBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Request\AuthorizationRequest">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </type>
+
+    <!-- Authorization vault Request -->
+    <virtualType name="AllsecureExchangePaymentGatewayAuthorizationVaultRequest" type="Magento\Payment\Gateway\Request\BuilderComposite">
+        <arguments>
+            <argument name="builders" xsi:type="array">
+                <item name="transaction" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\AuthorizationRequest</item>
+                <item name="cvv" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\SaveCardRequest</item>
+                <item name="vault" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\VaultDataBuilder</item>
+                <item name="payment" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\PaymentDataBuilder</item>
+                <item name="customer" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\CustomerDataBuilder</item>
+                <item name="address" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\AddressDataBuilder</item>
+                <item name="threeDSecure" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\ThreeDSecureDataBuilder</item>
+                <item name="extraData" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Request\ExtraDataBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!--General Response validator-->
+    <virtualType name="GeneralResponseValidator" type="Magento\Payment\Gateway\Validator\ValidatorComposite">
+        <arguments>
+            <argument name="validators" xsi:type="array">
+                <item name="general" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Validator\GeneralResponseValidator</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Capture command -->
+    <virtualType name="AllsecureExchangePaymentGatewayCaptureCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Request\CaptureRequest</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\CaptureHandler</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionCapture</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Capture Request -->
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Request\CaptureRequest">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </type>
+
+    <!-- Refund command -->
+    <virtualType name="AllsecureExchangePaymentGatewayRefundCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Request\RefundDataBuilder</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\CaptureHandler</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionRefund</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Refund Request -->
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Request\RefundDataBuilder">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </type>
+
+    <!-- Void command -->
+    <virtualType name="AllsecureExchangePaymentGatewayVoidCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Request\VoidRequest</argument>
+            <argument name="handler" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Response\VoidHandler</argument>
+            <argument name="transferFactory" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\TransferFactory</argument>
+            <argument name="validator" xsi:type="object">GeneralResponseValidator</argument>
+            <argument name="client" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\Http\Client\TransactionVoid</argument>
+            <argument name="errorMessageMapper" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Void Request -->
+    <type name="AllsecureExchange\AllsecureExchange\Gateway\Request\VoidRequest">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </type>
+
+    <!-- Authorize Response handlers -->
+    <virtualType name="AllsecureExchangePaymentGatewayResponseHandlerComposite" type="Magento\Payment\Gateway\Response\HandlerChain">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="txnid" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\TxnIdHandler</item>
+                <item name="payment_details" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\CardDetailsHandler</item>
+                <item name="vault_details" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\VaultDetailsHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Sale Response handlers -->
+    <virtualType name="AllsecureExchangePaymentGatewaySaleResponseHandlerComposite" type="Magento\Payment\Gateway\Response\HandlerChain">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="txnid" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\DebitHandler</item>
+                <item name="payment_details" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\CardDetailsHandler</item>
+                <item name="vault_details" xsi:type="string">AllsecureExchange\AllsecureExchange\Gateway\Response\VaultDetailsHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+
+
+    <!-- Value handlers infrastructure -->
+    <virtualType name="AllsecureExchangePaymentGatewayValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">AllsecureExchangePaymentGatewayConfigValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchangePaymentGatewayConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <type name="AllsecureExchange\AllsecureExchange\Block\Info">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeCardConfig</argument>
+        </arguments>
+    </type>
+
+    <!-- Configuration for Vault payments -->
+    <virtualType name="AllsecureExchangeVaultPaymentConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">\AllsecureExchange\AllsecureExchange\Model\Ui\ConfigProvider::CC_VAULT_CODE</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchangeVaultPaymentValueHandler" type="VaultPaymentDefaultValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">AllsecureExchangeVaultPaymentConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchangeVaultPaymentValueHandlerPool" type="VaultPaymentValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">AllsecureExchangeVaultPaymentValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchangeCreditCardVaultFacade" type="Magento\Vault\Model\Method\Vault">
+        <arguments>
+            <argument name="config" xsi:type="object">AllsecureExchangeVaultPaymentConfig</argument>
+            <argument name="valueHandlerPool" xsi:type="object">AllsecureExchangeVaultPaymentValueHandlerPool</argument>
+            <argument name="vaultProvider" xsi:type="object">AllsecureExchangePaymentGatewayFacade</argument>
+            <argument name="code" xsi:type="const">\AllsecureExchange\AllsecureExchange\Model\Ui\ConfigProvider::CC_VAULT_CODE</argument>
+            <argument name="commandManagerPool" xsi:type="object">AllsecureExchangeCcVaultCommandManagerPool</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Command managers section for Vault -->
+    <virtualType name="AllsecureExchangeCommandManager" type="Magento\Payment\Gateway\Command\CommandManager">
+        <arguments>
+            <argument name="commandPool" xsi:type="object">AllsecureExchangePaymentGatewayCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Payment\Gateway\Command\CommandManagerPool">
+        <arguments>
+            <argument name="executors" xsi:type="array">
+                <item name="allsecureexchange_creditcard" xsi:type="string">AllsecureExchangeCommandManager</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="AllsecureExchangeCcVaultCommandManagerPool" type="Magento\Payment\Gateway\Command\CommandManagerPool">
+        <arguments>
+            <argument name="executors" xsi:type="array">
+                <item name="allsecureexchange_creditcard" xsi:type="string">AllsecureExchangeCommandManager</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <!-- END command managers section for Vault -->
+
+    <!-- AllsecureExchange error code mapper -->
+    <virtualType name="AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualConfigReader" type="Magento\Payment\Gateway\ErrorMapper\VirtualConfigReader">
+        <arguments>
+            <argument name="fileName" xsi:type="string">allsecureexchange_error_mapping.xml</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualMappingData" type="Magento\Payment\Gateway\ErrorMapper\MappingData">
+        <arguments>
+            <argument name="reader" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualConfigReader</argument>
+            <argument name="cacheId" xsi:type="string">allsecureexchange_error_mapper</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualErrorMessageMapper" type="Magento\Payment\Gateway\ErrorMapper\ErrorMessageMapper">
+        <arguments>
+            <argument name="messageMapping" xsi:type="object">AllsecureExchange\AllsecureExchange\Gateway\ErrorMapper\VirtualMappingData</argument>
+        </arguments>
+    </virtualType>
+</config>
